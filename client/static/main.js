@@ -1,6 +1,6 @@
-const domain = "http://127.0.0.1:5000/"
-const api_version = "api_v1/"
-const base_url = domain + api_version
+//const domain = window.location.host
+const api_version = "/api_v1/"
+//const base_url = domain + api_version
 
 function clearValue(el) {
     return el.value = "";
@@ -10,7 +10,8 @@ function clearValue(el) {
 
 let cache = {};
 const request = (endpoint, params, method) =>  {
-    const url = base_url + endpoint
+    const url = api_version + endpoint
+    console.log(url)
     // Quick return from cache.
     let cacheKey = JSON.stringify( { url, params, method } );
     if ( cache[ cacheKey ] ) {
@@ -71,19 +72,47 @@ const vm = new Vue({
                 }
                 obj[item.id] = value;
             });
-            let response = post('linear/points', obj)
+            post('linear/points', obj)
                 .then( response => {
-                    this.linear_functions.push(response);
+                    this.linear_functions.push(
+                        {
+                            ...response,
+                            ...obj
+                        }
+                    );
+                    console.log(this.linear_functions)
                     let linearFuncElement = document.createElement('p');
                     let text = document.createTextNode(response.equation);
                     linearFuncElement.appendChild(text);
                     container.appendChild(linearFuncElement);
+                    this.graphAll();
                 });
         },
         clearInputs: function () {
             this.getElements().forEach( (item) => {
                 clearValue(item);
             });
+        },
+        graphFunction: function (item) {
+            post('linear/single/graph', item)
+                .then( response => {
+                    console.log(response);
+                    Plotly.newPlot( 'graphic', response, {});
+                })
+        },
+        graphAll: function () {
+            post('linear/multiple/graph', this.linear_functions)
+                .then( response => {
+                    console.log(response);
+                    Plotly.newPlot( 'graphic', response, {});
+                })
         }
    }
 });
+
+//post('linear/multiple/graph', this.linear_functions)
+//                .then( response => {
+//                    console.log(response);
+//                    var config = {responsive: true}
+//                    Plotly.newPlot( 'graphic', response, {}, config);
+//                })
